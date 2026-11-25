@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GPS Timestamp Pro - Foto & Video</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>GPS Timestamp Camera & Gallery</h1>
+    <span id="gpsStatusBadge" class="badge badge-warn">GPS: Menunggu...</span>
+  </header>
+
+  <main class="container">
+    <!-- Area Pratinjau -->
+    <section class="preview-section">
+      <div class="canvas-wrapper">
+        <canvas id="outputCanvas"></canvas>
+      </div>
+
+      <!-- Sumber Media -->
+      <div class="source-controls">
+        <button id="btnStartCam" class="btn btn-primary">Buka Kamera</button>
+        <button id="btnSwitchCam" class="btn btn-secondary" disabled>Balik Kamera</button>
+        <label class="btn btn-accent file-btn">
+          Pilih Foto/Video Galeri
+          <input type="file" id="galleryInput" accept="image/*,video/*" hidden />
+        </label>
+      </div>
+
+      <!-- Aksi Simpan & Unduh -->
+      <div class="action-controls">
+        <button id="btnCapturePhoto" class="btn btn-success">Simpan Foto</button>
+        <button id="btnProcessVideo" class="btn btn-warning">Proses Video</button>
+        <button id="btnDownloadResult" class="btn btn-primary" disabled>Unduh Hasil</button>
+        <span id="processTimer" class="record-timer hidden">00:00</span>
+      </div>
+      <p id="statusText" class="status-text">Siap. Pilih kamera atau ambil file polos dari galeri.</p>
+    </section>
+
+    <!-- Panel Pengaturan -->
+    <section class="controls-section">
+      <!-- 1. Tanggal & Waktu Manual -->
+      <div class="card">
+        <h3>1. Tanggal, Bulan, Tahun & Jam (Manual)</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label for="manualDate">Tanggal / Bulan / Tahun</label>
+            <input type="date" id="manualDate" />
+          </div>
+          <div class="field">
+            <label for="manualTime">Jam : Menit : Detik</label>
+            <input type="time" id="manualTime" step="1" />
+          </div>
+        </div>
+        <button id="btnSyncNow" class="btn btn-small btn-secondary">Gunakan Waktu Sekarang</button>
+      </div>
+
+      <!-- 2. Identitas & Lokasi -->
+      <div class="card">
+        <h3>2. Nama Lengkap, Alamat & GPS</h3>
+        <div class="field">
+          <label for="fullName">Nama Lengkap</label>
+          <input type="text" id="fullName" placeholder="Contoh: Budi Santoso" value="Nama Lengkap Anda" />
+        </div>
+        <div class="field">
+          <label for="addressText">Alamat Lokasi</label>
+          <textarea id="addressText" rows="2" placeholder="Alamat otomatis dari GPS atau ketik manual...">Jl. Raya Cikampek, Cikampek, Jawa Barat</textarea>
+        </div>
+        <div class="row-actions">
+          <button id="btnFetchAddress" class="btn btn-small btn-secondary">Ambil Alamat dari GPS</button>
+          <label class="checkbox-label">
+            <input type="checkbox" id="simulateGps" />
+            Simulasi Gerak GPS (Tes)
+          </label>
+        </div>
+        <div class="gps-readout">
+          <div><strong>Koordinat:</strong> <span id="dispCoord">-6.416700, 107.456700</span></div>
+          <div><strong>Speed:</strong> <span id="dispSpeed">0.0 km/h</span> | <strong>Altitude:</strong> <span id="dispAlt">25.0 m</span></div>
+        </div>
+                <div class="grid-2 mt-10">
+          <div class="field">
+            <label for="fakeLat">Latitude Fake</label>
+            <input type="text" id="fakeLat" value="-6.406227" />
+          </div>
+          <div class="field">
+            <label for="fakeLng">Longitude Fake</label>
+            <input type="text" id="fakeLng" value="107.463022" />
+          </div>
+        </div>
+        <div class="row-actions">
+          <button type="button" id="btnApplyFakeCoord" class="btn btn-small btn-secondary">Set Koordinat Fake</button>
+          <label class="checkbox-label">
+            <input type="checkbox" id="moveFakeCoord" checked />
+            Bikin Koordinat Bergerak
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. Ukuran Semua Teks -->
+      <div class="card">
+        <h3>3. Ukuran Semua Tulisan</h3>
+        <div class="field">
+          <label for="fontScale">Skala Ukuran Teks: <strong id="fontScaleVal">100%</strong></label>
+          <input type="range" id="fontScale" min="60" max="180" value="100" />
+        </div>
+      </div>
+
+      <!-- 4. Pengaturan Logo -->
+      <div class="card">
+        <h3>4. Logo (6 Posisi & Opacity)</h3>
+        <div class="field">
+          <label class="btn btn-small btn-secondary file-btn">
+            Upload Gambar Logo
+            <input type="file" id="logoInput" accept="image/*" hidden />
+          </label>
+          <button id="btnClearLogo" class="btn btn-small btn-outline">Hapus Logo</button>
+        </div>
+
+        <label class="sub-label">Posisi Logo:</label>
+        <div class="pos-grid" id="logoPosGrid">
+          <button type="button" class="pos-btn" data-pos="top-left">Atas Kiri</button>
+          <button type="button" class="pos-btn" data-pos="top-center">Atas Tengah</button>
+          <button type="button" class="pos-btn active" data-pos="top-right">Atas Kanan</button>
+          <button type="button" class="pos-btn" data-pos="bottom-left">Bawah Kiri</button>
+          <button type="button" class="pos-btn" data-pos="bottom-center">Bawah Tengah</button>
+          <button type="button" class="pos-btn" data-pos="bottom-right">Bawah Kanan</button>
+        </div>
+
+        <div class="field mt-10">
+          <label for="logoOpacity">Transparansi (Opacity) Logo: <strong id="logoOpacityVal">85%</strong></label>
+          <input type="range" id="logoOpacity" min="0" max="100" value="85" />
+        </div>
+      </div>
+
+      <!-- 5. Peta Mini (Ukuran, 6 Posisi & Opacity) -->
+      <div class="card">
+        <h3>5. Peta Mini (Ukuran, Posisi & Opacity)</h3>
+        <div class="row-actions mb-8">
+          <label class="checkbox-label">
+            <input type="checkbox" id="showMap" checked />
+            Tampilkan Peta + Tetesan Merah
+          </label>
+          <button id="btnRefreshMap" type="button" class="btn btn-small btn-secondary">Muat Ulang Peta</button>
+        </div>
+
+        <div class="field">
+          <label for="mapScale">Ukuran Peta: <strong id="mapScaleVal">100%</strong></label>
+          <input type="range" id="mapScale" min="60" max="180" value="100" />
+        </div>
+
+        <label class="sub-label">Posisi Peta:</label>
+        <div class="pos-grid" id="mapPosGrid">
+          <button type="button" class="pos-btn" data-pos="top-left">Atas Kiri</button>
+          <button type="button" class="pos-btn" data-pos="top-center">Atas Tengah</button>
+          <button type="button" class="pos-btn" data-pos="top-right">Atas Kanan</button>
+          <button type="button" class="pos-btn active" data-pos="bottom-left">Bawah Kiri</button>
+          <button type="button" class="pos-btn" data-pos="bottom-center">Bawah Tengah</button>
+          <button type="button" class="pos-btn" data-pos="bottom-right">Bawah Kanan</button>
+        </div>
+
+        <div class="field mt-10">
+          <label for="mapOpacity">Transparansi (Opacity) Peta: <strong id="mapOpacityVal">100%</strong></label>
+          <input type="range" id="mapOpacity" min="0" max="100" value="100" />
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <video id="sourceVideo" playsinline muted hidden></video>
+  <img id="sourceImage" alt="" hidden />
+
+  <script src="app.js"></script>
+</body>
+</html>
